@@ -156,6 +156,7 @@ class Tokenizer(object):
         char_level: if True, every character will be treated as a token.
         oov_token: if given, it will be added to word_index and used to
             replace out-of-vocabulary words during text_to_sequence calls
+        stopwords: a set of stopwords to be ignored
 
     By default, all punctuation is removed, turning the texts into
     space-separated sequences of words
@@ -172,6 +173,7 @@ class Tokenizer(object):
                  char_level=False,
                  oov_token=None,
                  document_count=0,
+                 stopwords=None,
                  **kwargs):
         # Legacy support
         if 'nb_words' in kwargs:
@@ -190,6 +192,7 @@ class Tokenizer(object):
         self.document_count = document_count
         self.char_level = char_level
         self.oov_token = oov_token
+        self.stopwords = stopwords
         self.index_docs = defaultdict(int)
         self.word_index = dict()
         self.index_word = dict()
@@ -222,10 +225,11 @@ class Tokenizer(object):
                                             self.lower,
                                             self.split)
             for w in seq:
-                if w in self.word_counts:
-                    self.word_counts[w] += 1
-                else:
-                    self.word_counts[w] = 1
+                if self.stopwords and w not in self.stopwords:
+                    if w in self.word_counts:
+                        self.word_counts[w] += 1
+                    else:
+                        self.word_counts[w] = 1
             for w in set(seq):
                 # In how many documents each word occurs
                 self.word_docs[w] += 1
@@ -483,7 +487,6 @@ class Tokenizer(object):
             'config': config
         }
         return json.dumps(tokenizer_config, **kwargs)
-
 
 def tokenizer_from_json(json_string):
     """Parses a JSON tokenizer configuration file and returns a
